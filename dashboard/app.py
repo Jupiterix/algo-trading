@@ -179,7 +179,7 @@ def load_backtest_trades() -> pd.DataFrame:
 def load_upcoming_news() -> list:
     now = datetime.now(timezone.utc)
     events = get_high_impact_events(now, now + timedelta(days=3))
-    return [e for e in events if pd.Timestamp(e) >= pd.Timestamp(now)]
+    return list(events)
 
 
 # ── Stats helpers ─────────────────────────────────────────────────────────────
@@ -873,9 +873,11 @@ def main():
             if news:
                 for ev in news[:5]:
                     ts    = pd.Timestamp(ev)
-                    delta = ts - pd.Timestamp(now_utc)
+                    ts_utc = ts.tz_convert("UTC") if ts.tzinfo is not None else ts.tz_localize("UTC")
+                    now_ts = pd.Timestamp(now_utc)
+                    delta = ts_utc - now_ts
                     hrs   = int(delta.total_seconds() / 3600)
-                    st.markdown(f"🔴 `{ts.strftime('%a %d %b %H:%M')} UTC`  ({hrs}h)")
+                    st.markdown(f"🔴 `{ts_utc.strftime('%a %d %b %H:%M')} UTC`  ({hrs}h)")
             else:
                 st.caption("No high-impact events in next 3 days.")
 
