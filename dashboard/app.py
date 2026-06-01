@@ -799,7 +799,9 @@ def main():
     news       = load_upcoming_news()
 
     now_utc    = datetime.now(timezone.utc)
-    in_session = 7 <= now_utc.hour < 10 or 12 <= now_utc.hour < 15
+    import zoneinfo
+    now_lon    = now_utc.astimezone(zoneinfo.ZoneInfo("Europe/London"))
+    in_session = 7 <= now_lon.hour < 10 or 12 <= now_lon.hour < 15
     equity     = float(status.get("equity", INITIAL_EQUITY))
     pnl_total  = equity - INITIAL_EQUITY
     pnl_pct    = pnl_total / INITIAL_EQUITY * 100
@@ -882,12 +884,12 @@ def main():
                 st.caption("No high-impact events in next 3 days.")
 
             st.divider()
-            st.subheader("Kill Zones (UTC)")
+            st.subheader("Kill Zones (London time)")
             st.markdown(f"""
 | Session | Window | |
 |---------|--------|--|
-| London | 07:00–10:00 | {"🟢" if 7<=now_utc.hour<10 else "⚫"} |
-| NY | 12:00–15:00 | {"🟢" if 12<=now_utc.hour<15 else "⚫"} |
+| London | 07:00–10:00 | {"🟢" if 7<=now_lon.hour<10 else "⚫"} |
+| NY | 12:00–15:00 | {"🟢" if 12<=now_lon.hour<15 else "⚫"} |
 """)
 
     # ─────────────────────────────────────────────────────────────────────────
