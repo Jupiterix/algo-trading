@@ -166,13 +166,13 @@ void CheckAndExecuteSignal()
    }
 
    // Parse fields with validation
-   int    sigId      = StrToInt(parts[0]);
+   int    sigId      = MyStrToInt(parts[0]);
    string timestamp  = parts[1];
    string direction  = StringToLower(parts[2]);
-   double entry      = StrToDouble(parts[3]);
-   double stop       = StrToDouble(parts[4]);
-   double target     = StrToDouble(parts[5]);
-   int    confidence = StrToInt(parts[6]);
+   double entry      = MyStrToDouble(parts[3]);
+   double stop       = MyStrToDouble(parts[4]);
+   double target     = MyStrToDouble(parts[5]);
+   int    confidence = MyStrToInt(parts[6]);
    string zone       = parts[7];
    string status     = parts[8];
 
@@ -339,9 +339,9 @@ void ManageOpenPosition()
 //+------------------------------------------------------------------+
 //  Helper: Convert string to integer (safe)
 //+------------------------------------------------------------------+
-int StrToInt(string s)
+int MyStrToInt(string s)
 {
-   s = StringTrim(s);
+   s = MyStringTrim(s);
    if(StringLen(s) == 0) return 0;
    return (int)StringToInteger(s);
 }
@@ -349,9 +349,9 @@ int StrToInt(string s)
 //+------------------------------------------------------------------+
 //  Helper: Convert string to double (safe)
 //+------------------------------------------------------------------+
-double StrToDouble(string s)
+double MyStrToDouble(string s)
 {
-   s = StringTrim(s);
+   s = MyStringTrim(s);
    if(StringLen(s) == 0) return 0.0;
    return StringToDouble(s);
 }
@@ -359,7 +359,7 @@ double StrToDouble(string s)
 //+------------------------------------------------------------------+
 //  Helper: Trim whitespace
 //+------------------------------------------------------------------+
-string StringTrim(string s)
+string MyStringTrim(string s)
 {
    string result = s;
    int len = StringLen(result);
