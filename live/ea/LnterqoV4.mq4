@@ -485,28 +485,57 @@ string ErrorDescription(int error)
 }
 
 //+------------------------------------------------------------------+
-//  Append new row to trades CSV (safe append).
+//  Append new row to trades CSV (MQL4 compatible)
+//  Reads existing file, adds new line, rewrites entire file.
 //+------------------------------------------------------------------+
 void AppendTradeResult(int sigId, int ticket, double price, double lots, string status)
 {
-   int fh = FileOpen(FILE_TRADES, FILE_READ|FILE_APPEND|FILE_CSV|FILE_COMMON, ',');
+   string allLines[];
+   int lineCount = 0;
    
-   if(fh == INVALID_HANDLE)
+   // ── Read existing file if it exists ─────────────────────────────
+   if(FileIsExist(FILE_TRADES, FILE_COMMON))
    {
-      // File doesn't exist or can't be opened — create new
-      fh = FileOpen(FILE_TRADES, FILE_WRITE|FILE_CSV|FILE_COMMON, ',');
-      if(fh == INVALID_HANDLE) 
-      { 
-         Print("ERROR: Cannot create trades file ", FILE_TRADES);
-         return;
+      int fh = FileOpen(FILE_TRADES, FILE_READ|FILE_CSV|FILE_COMMON, ',');
+      if(fh != INVALID_HANDLE)
+      {
+         while(!FileIsEnding(fh))
+         {
+            string line = FileReadString(fh);
+            if(StringLen(line) > 0)
+            {
+               ArrayResize(allLines, lineCount + 1);
+               allLines[lineCount] = line;
+               lineCount++;
+            }
+         }
+         FileClose(fh);
       }
+   }
+   
+   // ── Create/rewrite file with all lines + new entry ─────────────
+   int fh = FileOpen(FILE_TRADES, FILE_WRITE|FILE_CSV|FILE_COMMON, ',');
+   if(fh == INVALID_HANDLE) 
+   { 
+      Print("ERROR: Cannot create trades file ", FILE_TRADES);
+      return;
+   }
+   
+   // Write header if file was empty
+   if(lineCount == 0)
+   {
       FileWrite(fh, "signal_id,ticket,entry_price,lots,status,close_price,pnl,r_multiple,timestamp");
    }
-
-   // Move to end of file
-   FileSeek(fh, 0, SEEK_END);
+   else
+   {
+      // Rewrite all existing lines
+      for(int i = 0; i < lineCount; i++)
+      {
+         FileWrite(fh, allLines[i]);
+      }
+   }
    
-   // Write entry
+   // Write new entry
    FileWrite(fh, sigId, ticket, price, lots, status, 0, 0, 0,
              TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS));
    
@@ -514,17 +543,47 @@ void AppendTradeResult(int sigId, int ticket, double price, double lots, string 
    Print("✓ Trade result appended: SigID=", sigId, " Ticket=", ticket, " Status=", status);
 }
 
+//+------------------------------------------------------------------+
+//  Update existing trade result when position closes.
+//+------------------------------------------------------------------+
 void UpdateTradeResult(int ticket, string outcome, double closePrice, double pnl, double rMult)
 {
-   // Append close update — Python script merges on ticket
-   int fh = FileOpen(FILE_TRADES, FILE_READ|FILE_APPEND|FILE_CSV|FILE_COMMON, ',');
+   string allLines[];
+   int lineCount = 0;
+   
+   // ── Read existing file ──────────────────────────────────────────
+   if(!FileIsExist(FILE_TRADES, FILE_COMMON)) return;
+   
+   int fh = FileOpen(FILE_TRADES, FILE_READ|FILE_CSV|FILE_COMMON, ',');
    if(fh == INVALID_HANDLE) return;
    
-   FileSeek(fh, 0, SEEK_END);
-   FileWrite(fh, 0, ticket, 0, 0, outcome, closePrice, pnl, rMult,
-             TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS));
+   while(!FileIsEnding(fh))
+   {
+      string line = FileReadString(fh);
+      if(StringLen(line) > 0)
+      {
+         ArrayResize(allLines, lineCount + 1);
+         allLines[lineCount] = line;
+         lineCount++;
+      }
+   }
    FileClose(fh);
    
+   // ── Rewrite file with update ────────────────────────────────────
+   fh = FileOpen(FILE_TRADES, FILE_WRITE|FILE_CSV|FILE_COMMON, ',');
+   if(fh == INVALID_HANDLE) return;
+   
+   // Write all existing lines
+   for(int i = 0; i < lineCount; i++)
+   {
+      FileWrite(fh, allLines[i]);
+   }
+   
+   // Append close update (Python script will merge on ticket)
+   FileWrite(fh, 0, ticket, 0, 0, outcome, closePrice, pnl, rMult,
+             TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS));
+   
+   FileClose(fh);
    Print("✓ Trade update written: Ticket=", ticket, " Outcome=", outcome, " PnL=", pnl);
 }
 
