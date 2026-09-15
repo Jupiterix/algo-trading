@@ -168,7 +168,7 @@ void CheckAndExecuteSignal()
    // Parse fields with validation
    int    sigId      = MyStrToInt(parts[0]);
    string timestamp  = parts[1];
-   string direction  = StringToLower(parts[2]);
+   string direction  = StringToLower(parts[2]);  // Cast to ensure string type
    double entry      = MyStrToDouble(parts[3]);
    double stop       = MyStrToDouble(parts[4]);
    double target     = MyStrToDouble(parts[5]);
